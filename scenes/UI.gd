@@ -10,6 +10,7 @@ signal launch_pressed
 @onready var lives_label: Label = $TopBar/Margin/HBox/LivesLabel
 @onready var guide_label: Label = $BottomBar/GuideLabel
 @onready var touch_launch_button: Button = $TouchControls/LaunchButton
+@onready var powerup_banner: Label = $PowerupBanner
 
 @onready var message_overlay: Control = $MessageOverlay
 @onready var message_title: Label = $MessageOverlay/Panel/VBox/TitleLabel
@@ -18,11 +19,29 @@ signal launch_pressed
 
 var is_game_over: bool = false
 var is_stage_cleared: bool = false
+var banner_tween: Tween = null
 
 func _ready() -> void:
 	message_overlay.visible = false
+	powerup_banner.modulate.a = 0.0
 	action_button.pressed.connect(_on_action_button_pressed)
 	touch_launch_button.pressed.connect(_on_touch_launch_pressed)
+
+func show_powerup_banner(banner_text: String, color: Color) -> void:
+	if banner_tween:
+		banner_tween.kill()
+	
+	powerup_banner.text = "★ %s ★" % banner_text
+	powerup_banner.add_theme_color_override("font_color", color)
+	powerup_banner.modulate.a = 1.0
+	powerup_banner.position.y = 48.0
+	
+	banner_tween = create_tween()
+	banner_tween.tween_property(powerup_banner, "position:y", 40.0, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	banner_tween.tween_interval(0.9)
+	banner_tween.tween_property(powerup_banner, "modulate:a", 0.0, 0.35)
+
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if message_overlay.visible:

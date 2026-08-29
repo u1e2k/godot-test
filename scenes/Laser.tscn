@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/Laser.gd" id="1_laser"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(6, 20)
+
+[node name="Laser" type="Area2D"]
+collision_layer = 8
+collision_mask = 5
+script = ExtResource("1_laser")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_1")

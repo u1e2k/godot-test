@@ -60,10 +60,12 @@ func _spawn_particles() -> void:
 	particles.color = base_color
 	particles.global_position = global_position
 	
-	get_parent().add_child(particles)
+	if get_parent():
+		get_parent().call_deferred("add_child", particles)
 	
 	# パーティクル終了後に自動削除
 	get_tree().create_timer(0.6).timeout.connect(particles.queue_free)
+
 
 func _draw() -> void:
 	var rect = Rect2(-block_width * 0.5, -block_height * 0.5, block_width, block_height)

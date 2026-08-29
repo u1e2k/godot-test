@@ -15,6 +15,13 @@ var snd_launch: AudioStreamWAV
 var snd_miss: AudioStreamWAV
 var snd_game_over: AudioStreamWAV
 var snd_win: AudioStreamWAV
+var snd_powerup: AudioStreamWAV
+var snd_laser: AudioStreamWAV
+var snd_extra_life: AudioStreamWAV
+var snd_explosion: AudioStreamWAV
+var snd_shield: AudioStreamWAV
+var snd_catch: AudioStreamWAV
+var snd_star: AudioStreamWAV
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -72,6 +79,27 @@ func play_game_over() -> void:
 func play_win() -> void:
 	_play(snd_win, -2.0, 1.0)
 
+func play_powerup() -> void:
+	_play(snd_powerup, -3.0, 1.0)
+
+func play_laser() -> void:
+	_play(snd_laser, -5.0, randf_range(0.96, 1.04))
+
+func play_extra_life() -> void:
+	_play(snd_extra_life, -2.0, 1.0)
+
+func play_explosion() -> void:
+	_play(snd_explosion, -2.0, randf_range(0.9, 1.1))
+
+func play_shield() -> void:
+	_play(snd_shield, -4.0, 1.0)
+
+func play_catch() -> void:
+	_play(snd_catch, -5.0, 1.2)
+
+func play_star() -> void:
+	_play(snd_star, -3.0, 1.0)
+
 # --- 波形生成ルーチン ---
 func _generate_all_sounds() -> void:
 	snd_paddle = _synthesize_sound(480.0, 720.0, 0.07, "square", 0.05)
@@ -82,6 +110,14 @@ func _generate_all_sounds() -> void:
 	snd_miss = _synthesize_sound(320.0, 110.0, 0.35, "saw", 0.3)
 	snd_game_over = _synthesize_melody([240.0, 200.0, 160.0, 120.0], 0.12, "saw")
 	snd_win = _synthesize_melody([440.0, 554.37, 659.25, 880.0], 0.10, "square")
+	snd_powerup = _synthesize_melody([400.0, 500.0, 630.0, 800.0], 0.05, "sine")
+	snd_laser = _synthesize_sound(1200.0, 300.0, 0.08, "saw", 0.06)
+	snd_extra_life = _synthesize_melody([523.25, 659.25, 783.99, 1046.50], 0.08, "square")
+	snd_explosion = _synthesize_sound(160.0, 40.0, 0.28, "noise", 0.25)
+	snd_shield = _synthesize_sound(600.0, 900.0, 0.10, "sine", 0.08)
+	snd_catch = _synthesize_sound(220.0, 440.0, 0.06, "triangle", 0.04)
+	snd_star = _synthesize_melody([659.25, 880.0, 1046.50, 1318.51], 0.06, "sine")
+
 
 func _synthesize_sound(start_freq: float, end_freq: float, duration: float, wave_type: String, decay_time: float) -> AudioStreamWAV:
 	var sample_rate = 22050
