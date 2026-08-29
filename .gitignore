@@ -1,0 +1,29 @@
+# Godot 4 固有のキャッシュ・インポートデータ
+.godot/
+*.translation
+
+# エクスポート出力バイナリ (APK, AAB, EXE, ZIP等)
+*.apk
+*.aab
+*.idsig
+*.exe
+*.zip
+*.pck
+
+# 認証鍵・キーストア
+*.keystore
+*.jks
+export_credentials.cfg
+
+# 一時ファイル
+*.tmp
+.tmp/
+
+# OS固有ファイル
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# エディタ・IDE固有
+.vscode/
+.idea/
