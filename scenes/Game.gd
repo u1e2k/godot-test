@@ -146,8 +146,9 @@ const STAGE_PATTERNS = [
 ]
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	get_tree().set_auto_accept_quit(false)
+
 	
 	active_balls.append(initial_ball)
 	initial_ball.attach_to_paddle(paddle)

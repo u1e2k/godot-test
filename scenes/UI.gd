@@ -40,9 +40,6 @@ var is_stage_cleared: bool = false
 var banner_tween: Tween = null
 var blink_time: float = 0.0
 
-var pause_buttons: Array[Button] = []
-var current_pause_idx: int = 0
-
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	message_overlay.visible = false
@@ -60,8 +57,18 @@ func _ready() -> void:
 	
 	start_game_button.pressed.connect(_on_start_game_pressed)
 	
-	pause_buttons = [resume_button, restart_button, title_button]
+	_setup_focus_navigation()
 	_setup_button_focus_styles()
+
+func _setup_focus_navigation() -> void:
+	resume_button.focus_neighbor_top = title_button.get_path()
+	resume_button.focus_neighbor_bottom = restart_button.get_path()
+	
+	restart_button.focus_neighbor_top = resume_button.get_path()
+	restart_button.focus_neighbor_bottom = title_button.get_path()
+	
+	title_button.focus_neighbor_top = restart_button.get_path()
+	title_button.focus_neighbor_bottom = resume_button.get_path()
 
 func _setup_button_focus_styles() -> void:
 	var focus_style = StyleBoxFlat.new()
@@ -70,19 +77,19 @@ func _setup_button_focus_styles() -> void:
 	focus_style.border_width_top = 3
 	focus_style.border_width_right = 3
 	focus_style.border_width_bottom = 3
-	focus_style.border_color = Color(1.0, 0.9, 0.3, 1.0) # 黄色ネオンフォーカス枠
+	focus_style.border_color = Color(1.0, 0.9, 0.2, 1.0) # 明るいイエローネオン枠
 	focus_style.corner_radius_top_left = 8
 	focus_style.corner_radius_top_right = 8
 	focus_style.corner_radius_bottom_left = 8
 	focus_style.corner_radius_bottom_right = 8
 	
 	var focus_style_danger = StyleBoxFlat.new()
-	focus_style_danger.bg_color = Color(0.6, 0.2, 0.25, 0.95)
+	focus_style_danger.bg_color = Color(0.65, 0.18, 0.22, 0.95)
 	focus_style_danger.border_width_left = 3
 	focus_style_danger.border_width_top = 3
 	focus_style_danger.border_width_right = 3
 	focus_style_danger.border_width_bottom = 3
-	focus_style_danger.border_color = Color(1.0, 0.9, 0.3, 1.0)
+	focus_style_danger.border_color = Color(1.0, 0.9, 0.2, 1.0)
 	focus_style_danger.corner_radius_top_left = 8
 	focus_style_danger.corner_radius_top_right = 8
 	focus_style_danger.corner_radius_bottom_left = 8
@@ -118,16 +125,11 @@ func hide_title_screen() -> void:
 
 func show_pause_menu() -> void:
 	pause_overlay.visible = true
-	current_pause_idx = 0
-	_update_pause_focus()
+	resume_button.grab_focus()
 	set_launch_guide_visible(false)
 
 func hide_pause_menu() -> void:
 	pause_overlay.visible = false
-
-func _update_pause_focus() -> void:
-	current_pause_idx = clamp(current_pause_idx, 0, pause_buttons.size() - 1)
-	pause_buttons[current_pause_idx].grab_focus()
 
 func show_powerup_banner(banner_text: String, color: Color) -> void:
 	if banner_tween:
@@ -157,77 +159,49 @@ func show_level_up_banner(level: int, perk_text: String) -> void:
 	banner_tween.tween_interval(1.4)
 	banner_tween.tween_property(powerup_banner, "modulate:a", 0.0, 0.4)
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
+	if not event.is_pressed() or event.is_echo():
+		return
+	
 	if title_screen.visible:
-		if _is_confirm_event(event):
+		if _is_confirm_action(event):
 			_on_start_game_pressed()
 			get_viewport().set_input_as_handled()
 			
 	elif pause_overlay.visible:
-		if event.is_action_pressed("pause_game"):
+		if event.is_action_pressed("pause_game") or event.is_action_pressed("ui_cancel"):
 			_on_resume_button_pressed()
 			get_viewport().set_input_as_handled()
-		elif _is_up_event(event):
-			current_pause_idx = (current_pause_idx - 1 + pause_buttons.size()) % pause_buttons.size()
-			_update_pause_focus()
-			get_viewport().set_input_as_handled()
-		elif _is_down_event(event):
-			current_pause_idx = (current_pause_idx + 1) % pause_buttons.size()
-			_update_pause_focus()
-			get_viewport().set_input_as_handled()
-		elif _is_confirm_event(event):
-			# 現在フォーカスされているボタンを実行
-			if current_pause_idx == 0:
-				_on_resume_button_pressed()
-			elif current_pause_idx == 1:
-				_on_restart_button_pressed()
-			elif current_pause_idx == 2:
+		elif _is_confirm_action(event):
+			var focused = get_viewport().gui_get_focus_owner()
+			if focused == title_button:
 				_on_title_button_pressed()
+			elif focused == restart_button:
+				_on_restart_button_pressed()
+			else:
+				_on_resume_button_pressed()
 			get_viewport().set_input_as_handled()
 			
 	elif message_overlay.visible:
-		if _is_confirm_event(event):
+		if _is_confirm_action(event):
 			_on_action_button_pressed()
 			get_viewport().set_input_as_handled()
+	else:
+		# ゲームプレイ中のポーズトリガー
+		if event.is_action_pressed("pause_game") or event.is_action_pressed("ui_cancel"):
+			pause_pressed.emit()
+			get_viewport().set_input_as_handled()
 
-func _is_confirm_event(event: InputEvent) -> bool:
-	if not event.is_pressed() or event.is_echo():
-		return false
-	if event.is_action("launch_ball") or event.is_action("restart_game") or event.is_action("ui_accept"):
+
+func _is_confirm_action(event: InputEvent) -> bool:
+	if event.is_action_pressed("ui_accept") or event.is_action_pressed("launch_ball") or event.is_action_pressed("restart_game"):
 		return true
 	if event is InputEventJoypadButton:
-		# Aボタン (0), Bボタン (1), Xボタン (2), Yボタン (3)
 		if event.button_index in [JOY_BUTTON_A, JOY_BUTTON_B, JOY_BUTTON_X, JOY_BUTTON_Y]:
 			return true
 	if event is InputEventKey:
 		if event.keycode in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_Z, KEY_X, KEY_C]:
 			return true
-	return false
-
-func _is_up_event(event: InputEvent) -> bool:
-	if not event.is_pressed() or event.is_echo():
-		return false
-	if event.is_action("ui_up"):
-		return true
-	if event is InputEventJoypadButton and event.button_index == JOY_BUTTON_DPAD_UP:
-		return true
-	if event is InputEventJoypadMotion and event.axis == JOY_AXIS_LEFT_Y and event.axis_value < -0.5:
-		return true
-	if event is InputEventKey and (event.keycode == KEY_UP or event.keycode == KEY_W):
-		return true
-	return false
-
-func _is_down_event(event: InputEvent) -> bool:
-	if not event.is_pressed() or event.is_echo():
-		return false
-	if event.is_action("ui_down"):
-		return true
-	if event is InputEventJoypadButton and event.button_index == JOY_BUTTON_DPAD_DOWN:
-		return true
-	if event is InputEventJoypadMotion and event.axis == JOY_AXIS_LEFT_Y and event.axis_value > 0.5:
-		return true
-	if event is InputEventKey and (event.keycode == KEY_DOWN or event.keycode == KEY_S):
-		return true
 	return false
 
 func update_score(score: int, high_score: int) -> void:

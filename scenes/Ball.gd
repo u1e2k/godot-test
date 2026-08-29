@@ -21,6 +21,7 @@ var bomb_timer: float = 0.0
 
 # キャッチ用オフセット
 var catch_offset_x: float = 0.0
+var launch_cooldown: float = 0.0
 
 func _ready() -> void:
 	add_to_group("ball")
@@ -42,6 +43,7 @@ func recenter() -> void:
 	is_bomb_ball = false
 	bomb_timer = 0.0
 	catch_offset_x = 0.0
+	launch_cooldown = 0.35 # スタート時の誤発射を防ぐクールダウン
 	if paddle:
 		global_position = paddle.global_position + Vector2(0, -22)
 	queue_redraw()
@@ -50,6 +52,7 @@ func catch_by_paddle(offset_x: float) -> void:
 	is_active = false
 	catch_offset_x = offset_x
 	velocity = Vector2.ZERO
+	launch_cooldown = 0.25 # キャッチ直後の暴発防止
 	SoundManager.play_catch()
 	queue_redraw()
 
@@ -69,7 +72,7 @@ func slow_down() -> void:
 		velocity = velocity.normalized() * speed
 
 func launch() -> void:
-	if is_active:
+	if is_active or launch_cooldown > 0.0:
 		return
 	is_active = true
 	# パドルの移動速度とキャッチ位置に応じた角度
@@ -84,6 +87,9 @@ func launch() -> void:
 	SoundManager.play_launch()
 
 func _physics_process(delta: float) -> void:
+	if launch_cooldown > 0.0:
+		launch_cooldown -= delta
+	
 	if fire_timer > 0.0:
 		fire_timer -= delta
 		if fire_timer <= 0.0:
@@ -100,9 +106,10 @@ func _physics_process(delta: float) -> void:
 		if paddle:
 			global_position = paddle.global_position + Vector2(catch_offset_x, -22)
 		# Bボタンまたは画面タップなどで発射
-		if Input.is_action_just_pressed("launch_ball"):
+		if launch_cooldown <= 0.0 and Input.is_action_just_pressed("launch_ball"):
 			launch()
 		return
+
 	
 	# トレイル更新
 	trail_points.push_front(global_position)
