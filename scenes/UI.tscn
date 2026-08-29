@@ -46,33 +46,33 @@ script = ExtResource("1_ui")
 [node name="TopBar" type="PanelContainer" parent="."]
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 54.0
+offset_bottom = 42.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_top")
 
 [node name="Margin" type="MarginContainer" parent="TopBar"]
 layout_mode = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 6
 
 [node name="HBox" type="HBoxContainer" parent="TopBar/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 40
+theme_override_constants/separation = 8
 
 [node name="ScoreLabel" type="Label" parent="TopBar/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 16
 text = "SCORE: 00000"
 
 [node name="HighScoreLabel" type="Label" parent="TopBar/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 16
 text = "HIGH: 00000"
 horizontal_alignment = 1
 
@@ -80,7 +80,7 @@ horizontal_alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.7, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 16
 text = "STAGE: 1"
 horizontal_alignment = 1
 
@@ -88,7 +88,7 @@ horizontal_alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.35, 0.45, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 16
 text = "LIVES: ♥ ♥ ♥"
 horizontal_alignment = 2
 
@@ -98,7 +98,7 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -46.0
+offset_top = -36.0
 grow_horizontal = 2
 grow_vertical = 0
 
@@ -110,7 +110,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(0.7, 0.85, 1, 0.8)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 14
 text = "【 Ⓑ / Ⓐ ボタン または タッチ 】 でボール発射！"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -131,13 +131,13 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -170.0
-offset_top = -150.0
-offset_right = -30.0
-offset_bottom = -78.0
+offset_left = -140.0
+offset_top = -105.0
+offset_right = -20.0
+offset_bottom = -45.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_launch_btn")
 text = "LAUNCH (Ⓑ)"
 
@@ -166,38 +166,38 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -260.0
-offset_top = -160.0
-offset_right = 260.0
-offset_bottom = 160.0
+offset_left = -220.0
+offset_top = -140.0
+offset_right = 220.0
+offset_bottom = 140.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
 
 [node name="VBox" type="VBoxContainer" parent="MessageOverlay/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="TitleLabel" type="Label" parent="MessageOverlay/Panel/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 38
+theme_override_font_sizes/font_size = 32
 text = "GAME OVER"
 horizontal_alignment = 1
 
 [node name="SubtitleLabel" type="Label" parent="MessageOverlay/Panel/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 15
 text = "FINAL SCORE: 00000
 
 [ Ⓑ ] ボタン または ボタンをタップしてリトライ"
 horizontal_alignment = 1
 
 [node name="ActionButton" type="Button" parent="MessageOverlay/Panel/VBox"]
-custom_minimum_size = Vector2(220, 50)
+custom_minimum_size = Vector2(180, 44)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 text = "RETRY (Ⓑ)"

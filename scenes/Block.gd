@@ -6,8 +6,8 @@ signal block_destroyed(points: int, global_pos: Vector2)
 @export var max_hp: int = 1
 @export var points: int = 100
 @export var base_color: Color = Color(0.95, 0.25, 0.4)
-@export var block_width: float = 76.0
-@export var block_height: float = 26.0
+@export var block_width: float = 72.0
+@export var block_height: float = 22.0
 
 var current_hp: int = 1
 var is_flashing: bool = false

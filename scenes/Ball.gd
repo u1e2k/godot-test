@@ -3,7 +3,7 @@ class_name Ball
 
 @export var start_speed: float = 480.0
 @export var max_speed: float = 850.0
-@export var ball_radius: float = 9.0
+@export var ball_radius: float = 8.5
 
 var speed: float = 480.0
 var is_active: bool = false
@@ -28,7 +28,7 @@ func recenter() -> void:
 	velocity = Vector2.ZERO
 	trail_points.clear()
 	if paddle:
-		global_position = paddle.global_position + Vector2(0, -26)
+		global_position = paddle.global_position + Vector2(0, -22)
 	queue_redraw()
 
 func launch() -> void:
@@ -49,7 +49,7 @@ func launch() -> void:
 func _physics_process(delta: float) -> void:
 	if not is_active:
 		if paddle:
-			global_position = paddle.global_position + Vector2(0, -26)
+			global_position = paddle.global_position + Vector2(0, -22)
 		# Bボタンまたは画面タップなどで発射
 		if Input.is_action_just_pressed("launch_ball"):
 			launch()
@@ -68,7 +68,7 @@ func _physics_process(delta: float) -> void:
 		if collider and collider.is_in_group("paddle"):
 			# パドル衝突: 当たった位置に応じて反射角を精密計算
 			var paddle_node = collider as Paddle
-			var half_w = (paddle_node.paddle_width * 0.5) if paddle_node else 65.0
+			var half_w = (paddle_node.paddle_width * 0.5) if paddle_node else 52.5
 			var offset_x = (global_position.x - collider.global_position.x) / half_w
 			offset_x = clamp(offset_x, -0.92, 0.92)
 			

@@ -62,16 +62,16 @@ func load_stage(stage_num: int) -> void:
 	
 	remaining_blocks = 0
 	
-	var cols = 12
+	var cols = 8
 	var rows = clamp(4 + stage_num, 5, 8)
-	var block_w = 76.0
-	var block_h = 26.0
-	var gap_x = 10.0
-	var gap_y = 10.0
+	var block_w = 72.0
+	var block_h = 22.0
+	var gap_x = 8.0
+	var gap_y = 8.0
 	
 	var total_w = cols * block_w + (cols - 1) * gap_x
-	var start_x = (1280.0 - total_w) * 0.5 + block_w * 0.5
-	var start_y = 100.0 + block_h * 0.5
+	var start_x = (720.0 - total_w) * 0.5 + block_w * 0.5
+	var start_y = 85.0 + block_h * 0.5
 	
 	for r in range(rows):
 		var color_info = STAGE_COLORS[r % STAGE_COLORS.size()]
@@ -95,7 +95,7 @@ func load_stage(stage_num: int) -> void:
 			blocks_container.add_child(block)
 			remaining_blocks += 1
 	
-	paddle.global_position = Vector2(640.0, 650.0)
+	paddle.global_position = Vector2(360.0, 640.0)
 	ball.recenter()
 	ui.set_launch_guide_visible(true)
 	ui.update_stage(stage_num)
@@ -131,13 +131,13 @@ func _on_ball_missed() -> void:
 	SoundManager.play_miss()
 	apply_camera_shake(12.0)
 	
+	paddle.global_position = Vector2(360.0, 640.0)
+	ball.recenter()
+	
 	if lives <= 0:
 		SoundManager.play_game_over()
 		ball.is_active = false
 		ui.show_game_over(score)
-	else:
-		paddle.global_position = Vector2(640.0, 650.0)
-		ball.recenter()
 
 func _on_stage_cleared() -> void:
 	ball.is_active = false

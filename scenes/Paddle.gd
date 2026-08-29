@@ -1,17 +1,20 @@
 extends CharacterBody2D
 class_name Paddle
 
-@export var speed: float = 700.0
-@export var paddle_width: float = 130.0
-@export var paddle_height: float = 22.0
-@export var min_x: float = 80.0
-@export var max_x: float = 1200.0
+const PADDLE_Y: float = 640.0
+
+@export var speed: float = 650.0
+@export var paddle_width: float = 105.0
+@export var paddle_height: float = 20.0
+@export var min_x: float = 20.0
+@export var max_x: float = 700.0
 
 var is_touching: bool = false
 var touch_target_x: float = 0.0
 
 func _ready() -> void:
 	add_to_group("paddle")
+	global_position.y = PADDLE_Y
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -26,6 +29,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	var move_dir = Input.get_axis("move_left", "move_right")
+	velocity.y = 0.0
 	
 	if move_dir != 0.0:
 		# 物理ボタン / スティック / キーボード入力
@@ -43,8 +47,9 @@ func _physics_process(delta: float) -> void:
 	
 	move_and_slide()
 	
-	# 画面枠制限
+	# 画面枠制限 & Y座標の絶対固定（めり込みや衝突による沈み込み・消滅を完全に防ぐ）
 	global_position.x = clamp(global_position.x, min_x + paddle_width * 0.5, max_x - paddle_width * 0.5)
+	global_position.y = PADDLE_Y
 
 func _draw() -> void:
 	var rect = Rect2(-paddle_width * 0.5, -paddle_height * 0.5, paddle_width, paddle_height)
