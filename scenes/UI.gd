@@ -40,6 +40,9 @@ var is_stage_cleared: bool = false
 var banner_tween: Tween = null
 var blink_time: float = 0.0
 
+var pause_buttons: Array[Button] = []
+var current_pause_idx: int = 0
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	message_overlay.visible = false
@@ -57,7 +60,45 @@ func _ready() -> void:
 	
 	start_game_button.pressed.connect(_on_start_game_pressed)
 	
-	start_game_button.grab_focus()
+	pause_buttons = [resume_button, restart_button, title_button]
+	_setup_button_focus_styles()
+
+func _setup_button_focus_styles() -> void:
+	var focus_style = StyleBoxFlat.new()
+	focus_style.bg_color = Color(0.2, 0.5, 0.9, 0.95)
+	focus_style.border_width_left = 3
+	focus_style.border_width_top = 3
+	focus_style.border_width_right = 3
+	focus_style.border_width_bottom = 3
+	focus_style.border_color = Color(1.0, 0.9, 0.3, 1.0) # 黄色ネオンフォーカス枠
+	focus_style.corner_radius_top_left = 8
+	focus_style.corner_radius_top_right = 8
+	focus_style.corner_radius_bottom_left = 8
+	focus_style.corner_radius_bottom_right = 8
+	
+	var focus_style_danger = StyleBoxFlat.new()
+	focus_style_danger.bg_color = Color(0.6, 0.2, 0.25, 0.95)
+	focus_style_danger.border_width_left = 3
+	focus_style_danger.border_width_top = 3
+	focus_style_danger.border_width_right = 3
+	focus_style_danger.border_width_bottom = 3
+	focus_style_danger.border_color = Color(1.0, 0.9, 0.3, 1.0)
+	focus_style_danger.corner_radius_top_left = 8
+	focus_style_danger.corner_radius_top_right = 8
+	focus_style_danger.corner_radius_bottom_left = 8
+	focus_style_danger.corner_radius_bottom_right = 8
+
+	resume_button.add_theme_stylebox_override("focus", focus_style)
+	resume_button.add_theme_stylebox_override("hover", focus_style)
+	restart_button.add_theme_stylebox_override("focus", focus_style)
+	restart_button.add_theme_stylebox_override("hover", focus_style)
+	title_button.add_theme_stylebox_override("focus", focus_style_danger)
+	title_button.add_theme_stylebox_override("hover", focus_style_danger)
+	
+	start_game_button.add_theme_stylebox_override("focus", focus_style)
+	start_game_button.add_theme_stylebox_override("hover", focus_style)
+	action_button.add_theme_stylebox_override("focus", focus_style)
+	action_button.add_theme_stylebox_override("hover", focus_style)
 
 func _process(delta: float) -> void:
 	if title_screen.visible and blink_prompt:
@@ -77,11 +118,16 @@ func hide_title_screen() -> void:
 
 func show_pause_menu() -> void:
 	pause_overlay.visible = true
-	resume_button.grab_focus()
+	current_pause_idx = 0
+	_update_pause_focus()
 	set_launch_guide_visible(false)
 
 func hide_pause_menu() -> void:
 	pause_overlay.visible = false
+
+func _update_pause_focus() -> void:
+	current_pause_idx = clamp(current_pause_idx, 0, pause_buttons.size() - 1)
+	pause_buttons[current_pause_idx].grab_focus()
 
 func show_powerup_banner(banner_text: String, color: Color) -> void:
 	if banner_tween:
@@ -113,17 +159,76 @@ func show_level_up_banner(level: int, perk_text: String) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if title_screen.visible:
-		if event.is_action_pressed("launch_ball") or event.is_action_pressed("restart_game"):
+		if _is_confirm_event(event):
 			_on_start_game_pressed()
 			get_viewport().set_input_as_handled()
+			
 	elif pause_overlay.visible:
 		if event.is_action_pressed("pause_game"):
 			_on_resume_button_pressed()
 			get_viewport().set_input_as_handled()
+		elif _is_up_event(event):
+			current_pause_idx = (current_pause_idx - 1 + pause_buttons.size()) % pause_buttons.size()
+			_update_pause_focus()
+			get_viewport().set_input_as_handled()
+		elif _is_down_event(event):
+			current_pause_idx = (current_pause_idx + 1) % pause_buttons.size()
+			_update_pause_focus()
+			get_viewport().set_input_as_handled()
+		elif _is_confirm_event(event):
+			# 現在フォーカスされているボタンを実行
+			if current_pause_idx == 0:
+				_on_resume_button_pressed()
+			elif current_pause_idx == 1:
+				_on_restart_button_pressed()
+			elif current_pause_idx == 2:
+				_on_title_button_pressed()
+			get_viewport().set_input_as_handled()
+			
 	elif message_overlay.visible:
-		if event.is_action_pressed("launch_ball") or event.is_action_pressed("restart_game"):
+		if _is_confirm_event(event):
 			_on_action_button_pressed()
 			get_viewport().set_input_as_handled()
+
+func _is_confirm_event(event: InputEvent) -> bool:
+	if not event.is_pressed() or event.is_echo():
+		return false
+	if event.is_action("launch_ball") or event.is_action("restart_game") or event.is_action("ui_accept"):
+		return true
+	if event is InputEventJoypadButton:
+		# Aボタン (0), Bボタン (1), Xボタン (2), Yボタン (3)
+		if event.button_index in [JOY_BUTTON_A, JOY_BUTTON_B, JOY_BUTTON_X, JOY_BUTTON_Y]:
+			return true
+	if event is InputEventKey:
+		if event.keycode in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_Z, KEY_X, KEY_C]:
+			return true
+	return false
+
+func _is_up_event(event: InputEvent) -> bool:
+	if not event.is_pressed() or event.is_echo():
+		return false
+	if event.is_action("ui_up"):
+		return true
+	if event is InputEventJoypadButton and event.button_index == JOY_BUTTON_DPAD_UP:
+		return true
+	if event is InputEventJoypadMotion and event.axis == JOY_AXIS_LEFT_Y and event.axis_value < -0.5:
+		return true
+	if event is InputEventKey and (event.keycode == KEY_UP or event.keycode == KEY_W):
+		return true
+	return false
+
+func _is_down_event(event: InputEvent) -> bool:
+	if not event.is_pressed() or event.is_echo():
+		return false
+	if event.is_action("ui_down"):
+		return true
+	if event is InputEventJoypadButton and event.button_index == JOY_BUTTON_DPAD_DOWN:
+		return true
+	if event is InputEventJoypadMotion and event.axis == JOY_AXIS_LEFT_Y and event.axis_value > 0.5:
+		return true
+	if event is InputEventKey and (event.keycode == KEY_DOWN or event.keycode == KEY_S):
+		return true
+	return false
 
 func update_score(score: int, high_score: int) -> void:
 	score_label.text = "SCORE: %05d" % score
@@ -153,8 +258,8 @@ func show_game_over(final_score: int) -> void:
 	is_stage_cleared = false
 	message_title.text = "GAME OVER"
 	message_title.add_theme_color_override("font_color", Color(1, 0.25, 0.25))
-	message_subtitle.text = "FINAL SCORE: %d" % final_score
-	action_button.text = "RETRY (Ⓑ)"
+	message_subtitle.text = "FINAL SCORE: %d\n\n【 Ⓑ / Ⓐ ボタン または タップでリトライ 】" % final_score
+	action_button.text = "RETRY (Ⓑ / Ⓐ)"
 	message_overlay.visible = true
 	action_button.grab_focus()
 	set_launch_guide_visible(false)
@@ -164,8 +269,8 @@ func show_stage_clear(stage: int, bonus_score: int) -> void:
 	is_game_over = false
 	message_title.text = "STAGE %d CLEAR!" % stage
 	message_title.add_theme_color_override("font_color", Color(0.3, 1, 0.5))
-	message_subtitle.text = "STAGE BONUS: +%d PTS" % bonus_score
-	action_button.text = "NEXT STAGE (Ⓑ)"
+	message_subtitle.text = "STAGE BONUS: +%d PTS\n\n【 Ⓑ / Ⓐ ボタン または タップで次へ 】" % bonus_score
+	action_button.text = "NEXT STAGE (Ⓑ / Ⓐ)"
 	message_overlay.visible = true
 	action_button.grab_focus()
 	set_launch_guide_visible(false)
@@ -181,13 +286,17 @@ func _on_pause_button_pressed() -> void:
 	pause_pressed.emit()
 
 func _on_resume_button_pressed() -> void:
+	hide_pause_menu()
 	resume_pressed.emit()
 
 func _on_restart_button_pressed() -> void:
+	hide_pause_menu()
 	restart_pressed.emit()
 
 func _on_title_button_pressed() -> void:
+	hide_pause_menu()
 	title_pressed.emit()
 
 func _on_start_game_pressed() -> void:
+	hide_title_screen()
 	start_game_pressed.emit()
