@@ -11,10 +11,12 @@ signal block_destroyed(points: int, global_pos: Vector2)
 
 var current_hp: int = 1
 var is_flashing: bool = false
+var is_destroyed: bool = false
 
 func _ready() -> void:
 	add_to_group("blocks")
 	current_hp = max_hp
+	is_destroyed = false
 	queue_redraw()
 
 func setup(hp: int, pts: int, color: Color) -> void:
@@ -22,9 +24,12 @@ func setup(hp: int, pts: int, color: Color) -> void:
 	current_hp = hp
 	points = pts
 	base_color = color
+	is_destroyed = false
 	queue_redraw()
 
 func take_damage(damage: int = 1) -> void:
+	if is_destroyed:
+		return
 	current_hp -= damage
 	if current_hp <= 0:
 		_destroy()
@@ -33,6 +38,8 @@ func take_damage(damage: int = 1) -> void:
 		SoundManager.play_block_hit()
 
 func _flash_hit() -> void:
+	if is_destroyed:
+		return
 	is_flashing = true
 	queue_redraw()
 	await get_tree().create_timer(0.06).timeout
@@ -40,10 +47,21 @@ func _flash_hit() -> void:
 	queue_redraw()
 
 func _destroy() -> void:
+	if is_destroyed:
+		return
+	is_destroyed = true
+	remove_from_group("blocks")
+	
+	var col = get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if col:
+		col.set_deferred("disabled", true)
+	
+	visible = false
 	_spawn_particles()
 	SoundManager.play_block_break()
 	block_destroyed.emit(points, global_position)
 	queue_free()
+
 
 func _spawn_particles() -> void:
 	var particles = CPUParticles2D.new()

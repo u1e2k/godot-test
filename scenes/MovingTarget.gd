@@ -12,6 +12,7 @@ var current_hp: int = 2
 var move_dir: float = 1.0
 var pulse_time: float = 0.0
 var is_flashing: bool = false
+var is_destroyed: bool = false
 
 const TARGET_WIDTH: float = 58.0
 const TARGET_HEIGHT: float = 24.0
@@ -20,6 +21,7 @@ func _ready() -> void:
 	add_to_group("blocks")
 	add_to_group("moving_targets")
 	current_hp = max_hp
+	is_destroyed = false
 	queue_redraw()
 
 func setup(hp: int, spd: float, start_dir: float = 1.0) -> void:
@@ -27,9 +29,12 @@ func setup(hp: int, spd: float, start_dir: float = 1.0) -> void:
 	current_hp = hp
 	speed = spd
 	move_dir = start_dir
+	is_destroyed = false
 	queue_redraw()
 
 func _physics_process(delta: float) -> void:
+	if is_destroyed:
+		return
 	position.x += speed * move_dir * delta
 	if position.x >= max_x:
 		position.x = max_x
@@ -42,6 +47,8 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 func take_damage(damage: int = 1) -> void:
+	if is_destroyed:
+		return
 	current_hp -= damage
 	if current_hp <= 0:
 		_destroy()
@@ -50,6 +57,8 @@ func take_damage(damage: int = 1) -> void:
 		_flash_hit()
 
 func _flash_hit() -> void:
+	if is_destroyed:
+		return
 	is_flashing = true
 	queue_redraw()
 	await get_tree().create_timer(0.08).timeout
@@ -57,10 +66,22 @@ func _flash_hit() -> void:
 	queue_redraw()
 
 func _destroy() -> void:
+	if is_destroyed:
+		return
+	is_destroyed = true
+	remove_from_group("blocks")
+	remove_from_group("moving_targets")
+	
+	var col = get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if col:
+		col.set_deferred("disabled", true)
+	
+	visible = false
 	SoundManager.play_explosion()
 	_spawn_particles()
 	target_destroyed.emit(800, 300, global_position)
 	queue_free()
+
 
 func _spawn_particles() -> void:
 	var particles = CPUParticles2D.new()

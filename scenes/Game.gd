@@ -340,6 +340,14 @@ func _physics_process(delta: float) -> void:
 	if active_balls.is_empty() and current_state == State.PLAYING:
 		_on_ball_missed()
 
+func _count_remaining_blocks() -> int:
+	var count = 0
+	for child in blocks_container.get_children():
+		if is_instance_valid(child) and not child.is_queued_for_deletion():
+			if child is Block and not child.is_destroyed:
+				count += 1
+	return count
+
 func _on_block_destroyed(pts: int, block_pos: Vector2) -> void:
 	var earned = int(pts * score_multiplier)
 	score += earned
@@ -351,8 +359,12 @@ func _on_block_destroyed(pts: int, block_pos: Vector2) -> void:
 	_try_drop_item(block_pos, base_item_drop_rate)
 	
 	remaining_blocks -= 1
-	if remaining_blocks <= 0 and current_state == State.PLAYING:
+	var living_count = _count_remaining_blocks()
+	
+	# 画面上のブロックが実際にすべて破壊された場合のみステージクリア
+	if living_count <= 0 and current_state == State.PLAYING:
 		_on_stage_cleared()
+
 
 func _on_target_destroyed(pts: int, xp_amount: int, target_pos: Vector2) -> void:
 	var earned = int(pts * score_multiplier)
