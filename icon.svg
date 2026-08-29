@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="24" fill="#0f172a"/>
+  <!-- Blocks -->
+  <rect x="20" y="24" width="24" height="12" rx="3" fill="#f43f5e"/>
+  <rect x="48" y="24" width="24" height="12" rx="3" fill="#fb923c"/>
+  <rect x="76" y="24" width="24" height="12" rx="3" fill="#facc15"/>
+  <rect x="104" y="24" width="14" height="12" rx="3" fill="#4ade80"/>
+  
+  <rect x="10" y="42" width="24" height="12" rx="3" fill="#38bdf8"/>
+  <rect x="38" y="42" width="24" height="12" rx="3" fill="#818cf8"/>
+  <rect x="66" y="42" width="24" height="12" rx="3" fill="#c084fc"/>
+  <rect x="94" y="42" width="24" height="12" rx="3" fill="#f472b6"/>
+  
+  <!-- Ball -->
+  <circle cx="64" cy="74" r="8" fill="#38bdf8"/>
+  <circle cx="64" cy="74" r="12" fill="#38bdf8" opacity="0.3"/>
+  
+  <!-- Paddle -->
+  <rect x="34" y="102" width="60" height="12" rx="6" fill="#38bdf8"/>
+  <rect x="38" y="104" width="52" height="8" rx="4" fill="#e0f2fe"/>
+</svg>
