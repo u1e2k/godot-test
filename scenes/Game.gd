@@ -1,6 +1,14 @@
 extends Node2D
 class_name GameManager
 
+enum State {
+	TITLE,
+	PLAYING,
+	PAUSED,
+	GAME_OVER,
+	STAGE_CLEAR
+}
+
 @export var block_scene: PackedScene = preload("res://scenes/Block.tscn")
 @export var item_scene: PackedScene = preload("res://scenes/Item.tscn")
 @export var ball_scene: PackedScene = preload("res://scenes/Ball.tscn")
@@ -16,8 +24,11 @@ class_name GameManager
 @onready var ui: GameUI = $UI
 @onready var camera: Camera2D = $Camera2D
 
+var current_state: State = State.TITLE
+
 var score: int = 0
 var high_score: int = 0
+var max_level_reached: int = 1
 var lives: int = 3
 var current_stage: int = 1
 var remaining_blocks: int = 0
@@ -135,21 +146,47 @@ const STAGE_PATTERNS = [
 ]
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().set_auto_accept_quit(false)
 	
 	active_balls.append(initial_ball)
 	initial_ball.attach_to_paddle(paddle)
+	
+	ui.start_game_pressed.connect(_on_start_game)
+	ui.pause_pressed.connect(_toggle_pause)
+	ui.resume_pressed.connect(_resume_game)
+	ui.title_pressed.connect(_return_to_title)
 	ui.restart_pressed.connect(_on_ui_restart)
 	ui.launch_pressed.connect(_on_ui_launch)
 	
-	start_new_game()
+	# 初回はタイトル画面を表示
+	_return_to_title()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
-		if ui.is_game_over or ui.is_stage_cleared:
+		if current_state == State.PLAYING:
+			_toggle_pause()
+		elif current_state == State.PAUSED:
+			_resume_game()
+		elif current_state == State.GAME_OVER or current_state == State.STAGE_CLEAR:
 			_on_ui_restart()
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause_game"):
+		if current_state == State.PLAYING:
+			_toggle_pause()
+			get_viewport().set_input_as_handled()
+		elif current_state == State.PAUSED:
+			_resume_game()
+			get_viewport().set_input_as_handled()
+
+func _on_start_game() -> void:
+	ui.hide_title_screen()
+	start_new_game()
+
 func start_new_game() -> void:
+	get_tree().paused = false
+	current_state = State.PLAYING
 	score = 0
 	lives = 3
 	current_stage = 1
@@ -166,6 +203,9 @@ func start_new_game() -> void:
 	load_stage(current_stage)
 
 func load_stage(stage_num: int) -> void:
+	get_tree().paused = false
+	current_state = State.PLAYING
+	
 	# 既存オブジェクトのクリア
 	for child in blocks_container.get_children():
 		child.queue_free()
@@ -239,7 +279,40 @@ func _spawn_stage_targets(stage_num: int) -> void:
 		drone.target_destroyed.connect(_on_target_destroyed)
 		targets_container.call_deferred("add_child", drone)
 
+func _toggle_pause() -> void:
+	if current_state == State.PLAYING:
+		get_tree().paused = true
+		current_state = State.PAUSED
+		ui.show_pause_menu()
+
+func _resume_game() -> void:
+	if current_state == State.PAUSED:
+		get_tree().paused = false
+		current_state = State.PLAYING
+		ui.hide_pause_menu()
+
+func _return_to_title() -> void:
+	get_tree().paused = false
+	current_state = State.TITLE
+	_clear_all_game_objects()
+	ui.show_title_screen(high_score, max_level_reached)
+
+func _clear_all_game_objects() -> void:
+	for child in blocks_container.get_children():
+		child.queue_free()
+	for child in targets_container.get_children():
+		child.queue_free()
+	_clear_items()
+	_clear_shield()
+	_reset_to_single_ball()
+	paddle.reset_powerups()
+	paddle.global_position = Vector2(360.0, 640.0)
+	initial_ball.recenter()
+
 func _physics_process(delta: float) -> void:
+	if current_state == State.PAUSED or current_state == State.TITLE:
+		return
+	
 	if shake_amount > 0.0:
 		shake_amount = max(0.0, shake_amount - delta * 20.0)
 		camera.offset = Vector2(randf_range(-shake_amount, shake_amount), randf_range(-shake_amount, shake_amount))
@@ -251,7 +324,7 @@ func _physics_process(delta: float) -> void:
 		if is_instance_valid(b) and not b.is_active:
 			has_ready_ball = true
 			break
-	ui.set_launch_guide_visible(has_ready_ball and not ui.message_overlay.visible)
+	ui.set_launch_guide_visible(has_ready_ball and not ui.message_overlay.visible and not ui.pause_overlay.visible and not ui.title_screen.visible)
 	
 	var balls_to_remove: Array[Ball] = []
 	for b in active_balls:
@@ -263,7 +336,7 @@ func _physics_process(delta: float) -> void:
 		if b != initial_ball:
 			b.queue_free()
 	
-	if active_balls.is_empty():
+	if active_balls.is_empty() and current_state == State.PLAYING:
 		_on_ball_missed()
 
 func _on_block_destroyed(pts: int, block_pos: Vector2) -> void:
@@ -273,14 +346,11 @@ func _on_block_destroyed(pts: int, block_pos: Vector2) -> void:
 		high_score = score
 	ui.update_score(score, high_score)
 	
-	# XP獲得
 	add_xp(25 + int(pts * 0.1))
-	
-	# アイテムドロップ抽選
 	_try_drop_item(block_pos, base_item_drop_rate)
 	
 	remaining_blocks -= 1
-	if remaining_blocks <= 0:
+	if remaining_blocks <= 0 and current_state == State.PLAYING:
 		_on_stage_cleared()
 
 func _on_target_destroyed(pts: int, xp_amount: int, target_pos: Vector2) -> void:
@@ -292,8 +362,6 @@ func _on_target_destroyed(pts: int, xp_amount: int, target_pos: Vector2) -> void
 	
 	add_xp(xp_amount)
 	apply_camera_shake(8.0)
-	
-	# 確定でレアアイテムをドロップ
 	_try_drop_item(target_pos, 1.0, true)
 
 func add_xp(amount: int) -> void:
@@ -301,6 +369,8 @@ func add_xp(amount: int) -> void:
 	while current_xp >= next_level_xp:
 		current_xp -= next_level_xp
 		player_level += 1
+		if player_level > max_level_reached:
+			max_level_reached = player_level
 		next_level_xp = int(next_level_xp * 1.45) + 50
 		_on_level_up(player_level)
 	
@@ -340,7 +410,6 @@ func _try_drop_item(pos: Vector2, drop_chance: float, is_guaranteed_rare: bool =
 	
 	var item_type = DropItem.Type.WIDE
 	if is_guaranteed_rare:
-		# ドローン破壊時は強力なアイテムを高確率で選出
 		var rare_choices = [
 			DropItem.Type.MEGA,
 			DropItem.Type.MISSILE,
@@ -540,11 +609,13 @@ func _on_ball_missed() -> void:
 	initial_ball.recenter()
 	
 	if lives <= 0:
+		current_state = State.GAME_OVER
 		SoundManager.play_game_over()
 		initial_ball.is_active = false
 		ui.show_game_over(score)
 
 func _on_stage_cleared() -> void:
+	current_state = State.STAGE_CLEAR
 	_clear_items()
 	_clear_shield()
 	for b in active_balls:
@@ -562,13 +633,15 @@ func _on_stage_cleared() -> void:
 	ui.show_stage_clear(current_stage, bonus)
 
 func _on_ui_restart() -> void:
-	if ui.is_stage_cleared:
+	if current_state == State.STAGE_CLEAR:
 		current_stage += 1
 		load_stage(current_stage)
 	else:
 		start_new_game()
 
 func _on_ui_launch() -> void:
+	if current_state != State.PLAYING:
+		return
 	for b in active_balls:
 		if is_instance_valid(b) and not b.is_active:
 			b.launch()

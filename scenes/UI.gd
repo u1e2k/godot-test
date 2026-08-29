@@ -1,31 +1,87 @@
 extends CanvasLayer
 class_name GameUI
 
+signal start_game_pressed
+signal pause_pressed
+signal resume_pressed
 signal restart_pressed
+signal title_pressed
 signal launch_pressed
 
 @onready var score_label: Label = $TopBar/Margin/HBox/ScoreLabel
 @onready var level_label: Label = $TopBar/Margin/HBox/LevelLabel
 @onready var stage_label: Label = $TopBar/Margin/HBox/StageLabel
 @onready var lives_label: Label = $TopBar/Margin/HBox/LivesLabel
+@onready var pause_button: Button = $TopBar/Margin/HBox/PauseButton
 @onready var guide_label: Label = $BottomBar/GuideLabel
 @onready var touch_launch_button: Button = $TouchControls/LaunchButton
 @onready var powerup_banner: Label = $PowerupBanner
 
+# ゲームオーバー / ステージクリア用
 @onready var message_overlay: Control = $MessageOverlay
 @onready var message_title: Label = $MessageOverlay/Panel/VBox/TitleLabel
 @onready var message_subtitle: Label = $MessageOverlay/Panel/VBox/SubtitleLabel
 @onready var action_button: Button = $MessageOverlay/Panel/VBox/ActionButton
 
+# ポーズ用
+@onready var pause_overlay: Control = $PauseOverlay
+@onready var resume_button: Button = $PauseOverlay/Panel/VBox/ResumeButton
+@onready var restart_button: Button = $PauseOverlay/Panel/VBox/RestartButton
+@onready var title_button: Button = $PauseOverlay/Panel/VBox/TitleButton
+
+# タイトル（スタートメニュー）用
+@onready var title_screen: Control = $TitleScreen
+@onready var highscore_info: Label = $TitleScreen/VBox/HighscoreInfo
+@onready var start_game_button: Button = $TitleScreen/VBox/StartGameButton
+@onready var blink_prompt: Label = $TitleScreen/VBox/BlinkPrompt
+
 var is_game_over: bool = false
 var is_stage_cleared: bool = false
 var banner_tween: Tween = null
+var blink_time: float = 0.0
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	message_overlay.visible = false
+	pause_overlay.visible = false
+	title_screen.visible = true
 	powerup_banner.modulate.a = 0.0
+	
 	action_button.pressed.connect(_on_action_button_pressed)
 	touch_launch_button.pressed.connect(_on_touch_launch_pressed)
+	pause_button.pressed.connect(_on_pause_button_pressed)
+	
+	resume_button.pressed.connect(_on_resume_button_pressed)
+	restart_button.pressed.connect(_on_restart_button_pressed)
+	title_button.pressed.connect(_on_title_button_pressed)
+	
+	start_game_button.pressed.connect(_on_start_game_pressed)
+	
+	start_game_button.grab_focus()
+
+func _process(delta: float) -> void:
+	if title_screen.visible and blink_prompt:
+		blink_time += delta * 4.0
+		blink_prompt.modulate.a = 0.4 + 0.6 * abs(sin(blink_time))
+
+func show_title_screen(high_score: int, max_level: int) -> void:
+	title_screen.visible = true
+	pause_overlay.visible = false
+	message_overlay.visible = false
+	highscore_info.text = "HIGH SCORE: %05d  |  MAX LV: %d" % [high_score, max_level]
+	start_game_button.grab_focus()
+	set_launch_guide_visible(false)
+
+func hide_title_screen() -> void:
+	title_screen.visible = false
+
+func show_pause_menu() -> void:
+	pause_overlay.visible = true
+	resume_button.grab_focus()
+	set_launch_guide_visible(false)
+
+func hide_pause_menu() -> void:
+	pause_overlay.visible = false
 
 func show_powerup_banner(banner_text: String, color: Color) -> void:
 	if banner_tween:
@@ -56,9 +112,18 @@ func show_level_up_banner(level: int, perk_text: String) -> void:
 	banner_tween.tween_property(powerup_banner, "modulate:a", 0.0, 0.4)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if message_overlay.visible:
+	if title_screen.visible:
+		if event.is_action_pressed("launch_ball") or event.is_action_pressed("restart_game"):
+			_on_start_game_pressed()
+			get_viewport().set_input_as_handled()
+	elif pause_overlay.visible:
+		if event.is_action_pressed("pause_game"):
+			_on_resume_button_pressed()
+			get_viewport().set_input_as_handled()
+	elif message_overlay.visible:
 		if event.is_action_pressed("launch_ball") or event.is_action_pressed("restart_game"):
 			_on_action_button_pressed()
+			get_viewport().set_input_as_handled()
 
 func update_score(score: int, high_score: int) -> void:
 	score_label.text = "SCORE: %05d" % score
@@ -89,8 +154,9 @@ func show_game_over(final_score: int) -> void:
 	message_title.text = "GAME OVER"
 	message_title.add_theme_color_override("font_color", Color(1, 0.25, 0.25))
 	message_subtitle.text = "FINAL SCORE: %d" % final_score
-	action_button.text = "RETRY (B BUTTON)"
+	action_button.text = "RETRY (Ⓑ)"
 	message_overlay.visible = true
+	action_button.grab_focus()
 	set_launch_guide_visible(false)
 
 func show_stage_clear(stage: int, bonus_score: int) -> void:
@@ -99,8 +165,9 @@ func show_stage_clear(stage: int, bonus_score: int) -> void:
 	message_title.text = "STAGE %d CLEAR!" % stage
 	message_title.add_theme_color_override("font_color", Color(0.3, 1, 0.5))
 	message_subtitle.text = "STAGE BONUS: +%d PTS" % bonus_score
-	action_button.text = "NEXT STAGE (B BUTTON)"
+	action_button.text = "NEXT STAGE (Ⓑ)"
 	message_overlay.visible = true
+	action_button.grab_focus()
 	set_launch_guide_visible(false)
 
 func _on_action_button_pressed() -> void:
@@ -109,3 +176,18 @@ func _on_action_button_pressed() -> void:
 
 func _on_touch_launch_pressed() -> void:
 	launch_pressed.emit()
+
+func _on_pause_button_pressed() -> void:
+	pause_pressed.emit()
+
+func _on_resume_button_pressed() -> void:
+	resume_pressed.emit()
+
+func _on_restart_button_pressed() -> void:
+	restart_pressed.emit()
+
+func _on_title_button_pressed() -> void:
+	title_pressed.emit()
+
+func _on_start_game_pressed() -> void:
+	start_game_pressed.emit()
