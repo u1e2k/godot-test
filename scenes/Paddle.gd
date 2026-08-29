@@ -115,7 +115,7 @@ func launch_missiles(count: int = 4) -> void:
 		var missile = missile_scene.instantiate() as Missile
 		var offset_ratio = lerp(-0.35, 0.35, float(i) / float(max(1, count - 1)))
 		missile.global_position = global_position + Vector2(paddle_width * offset_ratio, -paddle_height * 0.8)
-		get_parent().add_child(missile)
+		get_parent().call_deferred("add_child", missile)
 		await get_tree().create_timer(0.12).timeout
 
 func reset_powerups() -> void:
@@ -142,14 +142,15 @@ func _shoot_lasers() -> void:
 	# 左レーザー
 	var laser_left = laser_scene.instantiate() as Laser
 	laser_left.global_position = global_position + Vector2(-offset_x, -paddle_height * 0.6)
-	get_parent().add_child(laser_left)
+	get_parent().call_deferred("add_child", laser_left)
 	
 	# 右レーザー
 	var laser_right = laser_scene.instantiate() as Laser
 	laser_right.global_position = global_position + Vector2(offset_x, -paddle_height * 0.6)
-	get_parent().add_child(laser_right)
+	get_parent().call_deferred("add_child", laser_right)
 	
 	SoundManager.play_laser()
+
 
 func _draw() -> void:
 	var rect = Rect2(-paddle_width * 0.5, -paddle_height * 0.5, paddle_width, paddle_height)

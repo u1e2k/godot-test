@@ -22,6 +22,8 @@ var snd_explosion: AudioStreamWAV
 var snd_shield: AudioStreamWAV
 var snd_catch: AudioStreamWAV
 var snd_star: AudioStreamWAV
+var snd_level_up: AudioStreamWAV
+var snd_drone_hit: AudioStreamWAV
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -100,6 +102,12 @@ func play_catch() -> void:
 func play_star() -> void:
 	_play(snd_star, -3.0, 1.0)
 
+func play_level_up() -> void:
+	_play(snd_level_up, -1.0, 1.0)
+
+func play_drone_hit() -> void:
+	_play(snd_drone_hit, -4.0, randf_range(0.95, 1.05))
+
 # --- 波形生成ルーチン ---
 func _generate_all_sounds() -> void:
 	snd_paddle = _synthesize_sound(480.0, 720.0, 0.07, "square", 0.05)
@@ -117,6 +125,9 @@ func _generate_all_sounds() -> void:
 	snd_shield = _synthesize_sound(600.0, 900.0, 0.10, "sine", 0.08)
 	snd_catch = _synthesize_sound(220.0, 440.0, 0.06, "triangle", 0.04)
 	snd_star = _synthesize_melody([659.25, 880.0, 1046.50, 1318.51], 0.06, "sine")
+	snd_level_up = _synthesize_melody([392.0, 523.25, 659.25, 783.99, 1046.50], 0.09, "square")
+	snd_drone_hit = _synthesize_sound(800.0, 1100.0, 0.07, "triangle", 0.05)
+
 
 
 func _synthesize_sound(start_freq: float, end_freq: float, duration: float, wave_type: String, decay_time: float) -> AudioStreamWAV:

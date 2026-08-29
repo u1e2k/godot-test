@@ -70,9 +70,12 @@ color = Color(0.25, 0.7, 1, 0.7)
 
 [node name="Blocks" type="Node2D" parent="."]
 
+[node name="Targets" type="Node2D" parent="."]
+
 [node name="Items" type="Node2D" parent="."]
 
 [node name="Balls" type="Node2D" parent="."]
+
 
 [node name="Paddle" parent="." instance=ExtResource("2_paddle")]
 position = Vector2(360, 640)
